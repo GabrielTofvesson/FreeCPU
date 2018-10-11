@@ -1,0 +1,26 @@
+# Quartus II gitignore
+greybox_tmp/*
+db/*
+incremental_db/*
+.git/*
+*.pof
+*.sof
+*.bak
+*.rpt
+*.pin
+*.sta
+*.sta.rpt
+*.sta.summary
+*.map
+*.map.rpt
+*.map.smsg
+*.map.summary
+*.cdf
+*.jdi
+*.done
+*.txt
+*.fit
+*.fit.summary
+*.qws
+*.qsf
+*.qpf
