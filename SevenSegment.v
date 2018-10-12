@@ -72,8 +72,7 @@ VGA screen(clk, gfx_rgb, vga_clk, VGA_rgb, VGA_hsync, VGA_vsync);
 ALU core0(.a(alu_a), .b(alu_b), .op(alu_op), .z(alu_out), .o_flags(alu_flags));
 altpll0 pll_gen(clk, pll[0], pll[1], pll[2], pll[3]);
 
-always @(posedge vga_clk)
-	gfx_rgb <= alu_a[2:0];
+always @(posedge vga_clk) gfx_rgb <= alu_a[2:0];
 
 always @(posedge pll[PLL_SELECT]) begin
 	if(!latch && write && next) begin
