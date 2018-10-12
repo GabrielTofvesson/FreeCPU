@@ -20,7 +20,7 @@ Divider #(.divideby(25000), .divide_reg_size(17)) divider_audio(clk, clk_graphic
 // Change the active segment data
 always @(posedge clk_graphics) begin
 	segment_select <=(segment_select << 1) | segment_select[3];
-	seg_sel_track <= seg_sel_track + 1;
+	seg_sel_track <= seg_sel_track + 1'b1;
 end
 
 // Assign the active segment data to the segment bus

@@ -25,15 +25,19 @@ H: N/A
 reg [15:0] i_z;
 reg [7:0] i_flg;
 
+wire [8:0] add_out;
+
 assign z = i_z[7:0];
 assign o_flags = i_flg;
+
+FastAdder8 fa8(.cin(), .a(a), .b(b), .out(add_out[7:0]), .cout(add_out[8]));
 
 always @* begin
 	case(op & 8'b00011111) // 5-bit instructions: 3 flag bits
 		// ADD
 		0: begin
-			i_z <= a+b;
-			i_flg <= z < a ? 1 : 0; // Set overflow flag if necessary
+			i_z <= add_out;
+			i_flg <= add_out[8] ? 8'b1 : 8'b0; // Set overflow flag if necessary
 		end
 		
 		// SUB
@@ -45,17 +49,17 @@ always @* begin
 		// MUL
 		2: begin
 			i_z <= a*b;
-			i_flg <= i_z[15:8] != 8'b00000000 ? 1 : 0;
+			i_flg <= i_z[15:8] != 8'b0 ? 8'b1 : 8'b0;
 		end
 		
 		// DIV
 		3: begin
-			if(b != 8'b00000000) begin
+			if(b != 8'b0) begin
 				i_z <= a/b;
-				i_flg <= 8'b00000000;
+				i_flg <= 8'b0;
 			end else begin
-				i_z <= 8'b00000000;
-				i_flg <= 8'b00010000;
+				i_z <= 16'b0;
+				i_flg <= 8'b10000;
 			end
 		end
 		
@@ -74,65 +78,65 @@ always @* begin
 			111 -> No output
 			
 			*/
-			i_z <= (op[7:5] == 3'b000) || (op[7:5] == 3'b011) || (op[7:5] == 3'b111) ? 0 : (op[5] && a > b) || (op[6] && a < b ) || (op[7] && a == b) ? 1 : 0;
+			i_z <= (op[7:5] == 3'b000) || (op[7:5] == 3'b011) || (op[7:5] == 3'b111) ? 16'b0 : (op[5] && a > b) || (op[6] && a < b ) || (op[7] && a == b) ? 16'b1 : 16'b0;
 			i_flg <=
-					(a > b ? 4 : 0) | // a > b
-					(a == b ? 8 : 0); // a == b
+					(a > b ? 8'b100 : 8'b0) | // a > b
+					(a == b ? 8'b1000 : 8'b0); // a == b
 		end
 		
 		// AND
 		5: begin
 			i_z <= a & b;
-			i_flg <= 8'b00000000;
+			i_flg <= 8'b0;
 		end
 		
 		// OR
 		6: begin
 			i_z <= a | b;
-			i_flg <= 8'b00000000;
+			i_flg <= 8'b0;
 		end
 		
 		// XOR
 		7: begin
 			i_z <= a ^ b;
-			i_flg <= 8'b00000000;
+			i_flg <= 8'b0;
 		end
 		
 		// NOT
 		8: begin
 			i_z <= ~a;
-			i_flg <= 8'b00000000;
+			i_flg <= 8'b0;
 		end
 		
 		// NAND
 		9: begin
 			i_z <= ~(a & b);
-			i_flg <= 8'b00000000;
+			i_flg <= 8'b0;
 		end
 		
 		// NOR
 		10: begin
 			i_z <= ~(a | b);
-			i_flg <= 8'b00000000;
+			i_flg <= 8'b0;
 		end
 		
 		// XNOR
 		11: begin
 			i_z <= ~(a ^ b);
-			i_flg <= 8'b00000000;
+			i_flg <= 8'b0;
 		end
 		
 		// CL_MUL
 		12: begin
 			i_z <=
-				(a[7] ? b << 7 : 0) ^
-				(a[6] ? b << 6 : 0) ^
-				(a[5] ? b << 5 : 0) ^
-				(a[4] ? b << 4 : 0) ^
-				(a[3] ? b << 3 : 0) ^
-				(a[2] ? b << 2 : 0) ^
-				(a[1] ? b << 1 : 0) ^
-				(a[0] ? b 		: 0);
+				(a[7] ? b << 7 : 16'b0) ^
+				(a[6] ? b << 6 : 16'b0) ^
+				(a[5] ? b << 5 : 16'b0) ^
+				(a[4] ? b << 4 : 16'b0) ^
+				(a[3] ? b << 3 : 16'b0) ^
+				(a[2] ? b << 2 : 16'b0) ^
+				(a[1] ? b << 1 : 16'b0) ^
+				(a[0] ? b 		: 16'b0);
 			
 			i_flg <=
 				(a[7] && (b[1] || b[2] || b[3] || b[4] || b[5] || b[6] || b[7])) ||
@@ -142,11 +146,11 @@ always @* begin
 				(a[3] && (b[5] || b[6] || b[7])) ||
 				(a[2] && (b[6] || b[7])) ||
 				(a[1] && b[7])
-				? 1 : 0;
+				? 8'b1 : 8'b0;
 		end
 		default: begin
-			i_z <= 0;
-			i_flg <= 32; // Unknown opcode
+			i_z <= 16'b0;
+			i_flg <= 8'b100000; // Unknown opcode
 		end
 	endcase
 end

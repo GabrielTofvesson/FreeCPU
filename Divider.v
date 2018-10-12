@@ -16,11 +16,11 @@ assign divided = div_int;			// Assign internal result state to external output
 // Division
 always @ (posedge clk) begin
 	if(div == divideby) begin
-		div_int <= pulsemode ? 1 : ~div_int;
+		div_int <= pulsemode ? 1'b1 : ~div_int;
 		div <= 0;
 	end else begin
 		if(pulsemode) div_int <= 0;
-		div <= div + 1;
+		div <= div + 1'b1;
 	end
 end
 
