@@ -25,18 +25,18 @@ localparam PLL_SELECT = 4; // 0: 100MHz, 1: 200MHz, 2: 300MHz, 3: 400MHz, 4: 50M
 
 // ----    REGISTERS   ---- //
 reg debounce;							// Input debouncer
-reg db_trap;
+reg db_trap;							// Debounce buffer
 reg [3:0] seg_buf_numbers [0:3];	// 7-segment binary-number-representation buffer
 reg [1:0] stage;						// Computational stage
-reg [7:0] alu_a;
-reg [7:0] alu_b;
-reg [7:0] alu_op;
+reg [7:0] alu_a;						// ALU (core0) input a
+reg [7:0] alu_b;						// ALU (core0) input b
+reg [7:0] alu_op;						// ALU (core0) opcode
 
 // ----     WIRES      ---- //
 wire [7:0] seg_buf[0:3];			// Encoded segment buffer (8-bit expanded 4-bit number buffer)
-wire [7:0] alu_out;
-wire [7:0] alu_flags;
-wire [4:0] pll;
+wire [7:0] alu_out;					// ALU (core0) output
+wire [7:0] alu_flags;				// ALU (core0) output flags
+wire [4:0] pll;						// Phase-locked-loop connections (+ source clock)
 
 assign pll[4] = clk;
 
@@ -47,6 +47,7 @@ initial seg_buf_numbers[1] = 4'b0000;
 initial seg_buf_numbers[2] = 4'b0000;
 initial seg_buf_numbers[3] = 4'b0000;
 initial debounce = 0;
+initial db_trap = 1;
 
 // Hex encoders for each 4-bit input set. Generates an 8-bit hex output
 SegmentHexEncoder enc0(.number (seg_buf_numbers[0]), .encoded (seg_buf[0]));
