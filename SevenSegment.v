@@ -24,7 +24,8 @@ module SevenSegment(
 );
 
 // ----    SETTINGS    ---- //
-localparam PLL_SELECT = 3; // 0: 100MHz, 1: 200MHz, 2: 300MHz, 3: 400MHz, 4: 50MHz
+localparam PLL_SELECT = 1;  // 0: 100MHz, 1: 200MHz, 2: 300MHz, 3: 400MHz, 4: 50MHz
+localparam RAM_PLL = 0;     // Must be either 0 or 1. DO NOT SET TO ANY OTHER VALUE AS IT MIGHT FRY THE ONBOARD RAM!!!
 
 // ----    REGISTERS   ---- //
 reg       debounce;              // Input debouncer
@@ -42,6 +43,12 @@ wire [7:0] alu_out;              // ALU (core0) output
 wire [7:0] alu_flags;            // ALU (core0) output flags
 wire [4:0] pll;                  // Phase-locked-loop connections (+ source clock)
 wire       vga_clk;              // VGA data clock
+wire       cb;                   // Callback/timeout
+wire [9:0] vga_coords[0:1];      // Current screen coordinates being drawn to
+wire       ram_request_read;     // Trigger a read operation from main memory
+wire       ram_request_write;    // Trigger a write operation from main memory
+wire       ram_event;            // Event trigger from ram when an operation is completed (ex. a read op is ready)
+wire [3:0] ram_state;            // Main memory event information
 
 // ----  WIRE ASSIGNS  ---- //
 assign pll[4] = clk;
@@ -68,12 +75,39 @@ SegmentManager seg_display(
 	.segments (seg_write)
 );
 
-VGA screen(clk, gfx_rgb, vga_clk, VGA_rgb, VGA_hsync, VGA_vsync);
+// Graphics controller
+VGA screen(clk, gfx_rgb, vga_clk, vga_coords[0], vga_coords[1], VGA_rgb, VGA_hsync, VGA_vsync);
+
+// Arithmetic logic unit
 ALU core0(.a(alu_a), .b(alu_b), .op(alu_op), .z(alu_out), .o_flags(alu_flags));
+
+// Clock generator
 altpll0 pll_gen(clk, pll[0], pll[1], pll[2], pll[3]);
 
-always @(posedge vga_clk) gfx_rgb <= alu_a[2:0];
+// Callback module (generate timeouts) (Precision: 1/400M = 2.5ns)
+Callback #(.ISIZE(32)) timeout(pll[3], 32'd400000000, ~value, cb);
 
+// RAM module
+RAM main_memory(
+	pll[RAM_PLL],
+	RAM_addr,
+	RAM_A10,
+	RAM_bank_sel,
+	RAM_data,
+	RAM_clk,
+	RAM_clk_enable,
+	RAM_enable,
+	RAM_strobe_col,
+	RAM_strobe_row,
+	RAM_write_enable,
+	ram_request_read,
+	ram_request_write,
+	ram_state,
+	ram_event
+);
+
+always @(posedge cb or negedge value) select_out <= cb ? 4'b0000 : 4'b1111;
+always @(posedge vga_clk) gfx_rgb <= alu_a[2:0];
 always @(posedge pll[PLL_SELECT]) begin
 	if(!latch && write && next) begin
 		debounce <= 1'b1;
@@ -137,9 +171,9 @@ always @(posedge pll[PLL_SELECT]) begin
 		seg_buf_numbers[3] <= alu_flags[3:0];
 	end
 	
-	select_out[0] <= ~debounce;
-	select_out[1] <= write;
-	select_out[2] <= next;
-	select_out[3] <= latch;
+	//select_out[0] <= ~debounce;
+	//select_out[1] <= write;
+	//select_out[2] <= next;
+	//select_out[3] <= latch;
 end
 endmodule

@@ -2,6 +2,8 @@ module VGA(
 	input  wire       clk,
 	input wire [2:0]  rgb_data,
 	output reg        graphics_clk,
+	output wire [9:0] graphics_coords_x,
+	output wire [9:0] graphics_coords_y,
 	output wire [2:0] VGA_rgb,
 	output wire       VGA_hsync,
 	output wire       VGA_vsync
@@ -27,6 +29,8 @@ wire dat_act = ((hcount >= hdat_begin) && (hcount < hdat_end)) && ((vcount >= vd
 assign VGA_hsync = (hcount > hsync_end);
 assign VGA_vsync = (vcount > vsync_end);
 assign VGA_rgb = (dat_act) ?  rgb_data : 3'b0;
+assign graphics_coords_x = vcount;
+assign graphics_coords_y = hcount;
 
 // Clock divider
 always @(posedge clk) graphics_clk = ~graphics_clk;

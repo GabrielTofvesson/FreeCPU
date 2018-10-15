@@ -25,22 +25,21 @@ assign RAM_clk_enable = read_init != 3'b000;
 
 assign RAM_clk = clk;                    // RAM clock tracks processor input clock
 
-always @(posedge clk) begin
-	if(read_init) begin
-		read_init <= read_init + 3'b001;
-		RAM_state <= 4'b0001;              // STATE: read
+always @(posedge clk or posedge read_rq) begin
+   if(read_rq) begin
+      if(!read_init && !write_rq) begin
+         read_init <= 3'b001;
+      end
 	end
-end
-
-always @(posedge read_rq) begin
-	if(!read_init && !write_rq) begin
-		read_init <= 3'b001;
-	end
+   else if(read_init) begin
+      read_init <= read_init + 3'b001;
+      RAM_state <= 4'b0001;              // STATE: read
+   end
 end
 
 always @(posedge write_rq) begin
 	if(!read_init && !read_rq) begin
-		//TODO: Implement read
+      //TODO: Implement read
 	end
 end
 
