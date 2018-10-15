@@ -12,11 +12,12 @@ module RAM(
 	output wire         RAM_write_enable, // RAM data bus write enable
 	input  wire         read_rq,          // Read request (Internal)
 	input  wire         write_rq,         // Write request (Internal)
-	output reg  [3:0]   RAM_state,        // State information (Internal)
-	output wire         op_trigger        // Event trigger wire
+	input  wire [1:0]   access_bank,      // Which bank to access
+	output reg  [15:0]  RAM_state,        // State information (Internal)
+	output wire [3:0]   op_trigger        // Event trigger wire (per bank)
 );
 
-reg [2:0] read_init;                     // Whether or not a read operation has been initiated
+reg [2:0] read_init[0:3];                // Whether or not a read operation has been initiated
 reg       trigger_low;                   // If trigger should be pulled low on next clock cycle
 
 assign op_trigger = read_init == 3'b011;
@@ -25,16 +26,21 @@ assign RAM_clk_enable = read_init != 3'b000;
 
 assign RAM_clk = clk;                    // RAM clock tracks processor input clock
 
+integer i;
+
 always @(posedge clk or posedge read_rq) begin
    if(read_rq) begin
       if(!read_init && !write_rq) begin
-         read_init <= 3'b001;
+         read_init[access_bank] <= 3'b001;
       end
 	end
-   else if(read_init) begin
-      read_init <= read_init + 3'b001;
-      RAM_state <= 4'b0001;              // STATE: read
-   end
+   else begin
+		for(i = 0; i<4; i = i + 1)
+		   if(read_init[i]) begin
+            read_init[i] <= read_init[i] + 3'b001; // Increment read
+            RAM_state[i*3 + 3 : i*3] <= 4'b0001;   // STATE: read
+         end
+	end
 end
 
 always @(posedge write_rq) begin

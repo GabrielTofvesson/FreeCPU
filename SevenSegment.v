@@ -24,8 +24,8 @@ module SevenSegment(
 );
 
 // ----    SETTINGS    ---- //
-localparam PLL_SELECT = 1;  // 0: 100MHz, 1: 200MHz, 2: 300MHz, 3: 400MHz, 4: 50MHz
-localparam RAM_PLL = 0;     // Must be either 0 or 1. DO NOT SET TO ANY OTHER VALUE AS IT MIGHT FRY THE ONBOARD RAM!!!
+localparam PLL_SELECT = 1;       // 0: 100MHz, 1: 200MHz, 2: 300MHz, 3: 400MHz, 4: 50MHz
+localparam RAM_PLL = 0;          // Must be either 0 or 1. DO NOT SET TO ANY OTHER VALUE AS IT MIGHT FRY THE ONBOARD RAM!!!
 
 // ----    REGISTERS   ---- //
 reg       debounce;              // Input debouncer
@@ -36,19 +36,20 @@ reg [7:0] alu_a;                 // ALU (core0) input a
 reg [7:0] alu_b;                 // ALU (core0) input b
 reg [7:0] alu_op;                // ALU (core0) opcode
 reg [2:0] gfx_rgb;               // VGA color channels
+reg [1:0] ram_bank_sel;          // Which ram bank to access
 
 // ----     WIRES      ---- //
-wire [7:0] seg_buf[0:3];         // Encoded segment buffer (8-bit expanded 4-bit number buffer)
-wire [7:0] alu_out;              // ALU (core0) output
-wire [7:0] alu_flags;            // ALU (core0) output flags
-wire [4:0] pll;                  // Phase-locked-loop connections (+ source clock)
-wire       vga_clk;              // VGA data clock
-wire       cb;                   // Callback/timeout
-wire [9:0] vga_coords[0:1];      // Current screen coordinates being drawn to
-wire       ram_request_read;     // Trigger a read operation from main memory
-wire       ram_request_write;    // Trigger a write operation from main memory
-wire       ram_event;            // Event trigger from ram when an operation is completed (ex. a read op is ready)
-wire [3:0] ram_state;            // Main memory event information
+wire [7:0]  seg_buf[0:3];        // Encoded segment buffer (8-bit expanded 4-bit number buffer)
+wire [7:0]  alu_out;             // ALU (core0) output
+wire [7:0]  alu_flags;           // ALU (core0) output flags
+wire [4:0]  pll;                 // Phase-locked-loop connections (+ source clock)
+wire        vga_clk;             // VGA data clock
+wire        cb;                  // Callback/timeout
+wire [9:0]  vga_coords[0:1];     // Current screen coordinates being drawn to
+wire        ram_request_read;    // Trigger a read operation from main memory
+wire        ram_request_write;   // Trigger a write operation from main memory
+wire [3:0]  ram_event;           // Event trigger from ram when an operation is completed (ex. a read op is ready)
+wire [15:0] ram_state;           // Main memory event information (0:3; bank0, 4:7; bank1, 8:11; bank2, 12:15; bank3)
 
 // ----  WIRE ASSIGNS  ---- //
 assign pll[4] = clk;
@@ -102,6 +103,7 @@ RAM main_memory(
 	RAM_write_enable,
 	ram_request_read,
 	ram_request_write,
+	ram_bank_sel,
 	ram_state,
 	ram_event
 );
