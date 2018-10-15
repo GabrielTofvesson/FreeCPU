@@ -8,7 +8,7 @@ module Callback(
 parameter ISIZE;
 
 reg [ISIZE-1:0] counter;
-reg [1:0] ctr_trigger = 2'b10;
+reg [2:0] ctr_trigger = 2'b10;
 
 assign callback = !counter & ctr_trigger;
 
@@ -18,7 +18,7 @@ always @(posedge clk or posedge reset) begin
 		ctr_trigger <= 2'b10;
 	end
 	else if(counter) counter <= counter - 1'b1;
-	else if(ctr_trigger) ctr_trigger = ctr_trigger - 2'b01; // pull trigger high for 2 clock cycles to correct for 2.5ns pulse issues
+	else if(ctr_trigger) ctr_trigger = ctr_trigger - 2'b1; // pull trigger high for 2 clock cycles to correct for 2.5ns pulse issues
 end
 
 endmodule

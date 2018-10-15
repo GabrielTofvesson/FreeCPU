@@ -84,8 +84,8 @@ ALU core0(.a(alu_a), .b(alu_b), .op(alu_op), .z(alu_out), .o_flags(alu_flags));
 // Clock generator
 altpll0 pll_gen(clk, pll[0], pll[1], pll[2], pll[3]);
 
-// Callback module (generate timeouts) (Precision: 1/400M = 2.5ns)
-Callback #(.ISIZE(32)) timeout(pll[3], 32'd400000000, ~value, cb);
+// Callback module (generate timeouts) (Precision: 1/100M = 10ns) NOTE: 400MHz seems to be unstable, so a precision of 2.5ns comes at the price of stability
+Callback #(.ISIZE(32)) timeout(pll[0], 32'd100000000, ~value, cb);
 
 // RAM module
 RAM main_memory(
