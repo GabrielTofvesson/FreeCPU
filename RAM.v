@@ -20,9 +20,15 @@ module RAM(
 reg [2:0] read_init[0:3];                // Whether or not a read operation has been initiated
 reg       trigger_low;                   // If trigger should be pulled low on next clock cycle
 
-assign op_trigger = read_init == 3'b011;
-assign RAM_enable = ~(read_init != 3'b000);
-assign RAM_clk_enable = read_init != 3'b000;
+genvar k;
+generate
+   for(k = 0; k<4; k = k + 1) begin : trigger_gen
+      assign op_trigger[k] = read_init[k] == 3'b011;
+   end
+endgenerate
+
+assign RAM_enable = read_init[0] == 3'b000 && read_init[1] == 3'b000 && read_init[2] == 3'b000 && read_init[3] == 3'b000;
+assign RAM_clk_enable = read_init[0] != 3'b000 && read_init[1] != 3'b000 && read_init[2] != 3'b000 && read_init[3] != 3'b000;
 
 assign RAM_clk = clk;                    // RAM clock tracks processor input clock
 
@@ -30,21 +36,32 @@ integer i;
 
 always @(posedge clk or posedge read_rq) begin
    if(read_rq) begin
-      if(!read_init && !write_rq) begin
+      if(!read_init[access_bank] && !write_rq) begin
          read_init[access_bank] <= 3'b001;
       end
 	end
    else begin
-		for(i = 0; i<4; i = i + 1)
-		   if(read_init[i]) begin
-            read_init[i] <= read_init[i] + 3'b001; // Increment read
-            RAM_state[i*3 + 3 : i*3] <= 4'b0001;   // STATE: read
-         end
+		if(read_init[0]) begin
+         read_init[0] <= read_init[0] + 3'b001; // Increment read
+         RAM_state[3:0] <= 4'b0001;   // STATE: read
+      end
+		if(read_init[1]) begin
+         read_init[1] <= read_init[1] + 3'b001; // Increment read
+         RAM_state[7:4] <= 4'b0001;   // STATE: read
+      end
+		if(read_init[2]) begin
+         read_init[2] <= read_init[2] + 3'b001; // Increment read
+         RAM_state[11:8] <= 4'b0001;   // STATE: read
+      end
+		if(read_init[3]) begin
+         read_init[3] <= read_init[3] + 3'b001; // Increment read
+         RAM_state[15:12] <= 4'b0001;   // STATE: read
+      end
 	end
 end
 
 always @(posedge write_rq) begin
-	if(!read_init && !read_rq) begin
+	if(!read_init[access_bank] && !read_rq) begin
       //TODO: Implement read
 	end
 end

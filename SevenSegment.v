@@ -80,7 +80,7 @@ SegmentManager seg_display(
 VGA screen(clk, gfx_rgb, vga_clk, vga_coords[0], vga_coords[1], VGA_rgb, VGA_hsync, VGA_vsync);
 
 // Arithmetic logic unit
-ALU core0(.a(alu_a), .b(alu_b), .op(alu_op), .z(alu_out), .o_flags(alu_flags));
+ALU #(.BITS(8), .LOG2_BITS(3)) core0(.a(alu_a), .b(alu_b), .op(alu_op), .z(alu_out), .o_flags(alu_flags));
 
 // Clock generator
 altpll0 pll_gen(clk, pll[0], pll[1], pll[2], pll[3]);
