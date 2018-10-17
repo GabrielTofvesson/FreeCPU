@@ -28,15 +28,17 @@ localparam PLL_SELECT = 1;       // 0: 100MHz, 1: 200MHz, 2: 300MHz, 3: 400MHz, 
 localparam RAM_PLL = 0;          // Must be either 0 or 1. DO NOT SET TO ANY OTHER VALUE AS IT MIGHT FRY THE ONBOARD RAM!!!
 
 // ----    REGISTERS   ---- //
-reg       debounce;              // Input debouncer
-reg       db_trap;               // Debounce buffer
-reg [3:0] seg_buf_numbers [0:3]; // 7-segment binary-number-representation buffer
-reg [1:0] stage;                 // Computational stage
-reg [7:0] alu_a;                 // ALU (core0) input a
-reg [7:0] alu_b;                 // ALU (core0) input b
-reg [7:0] alu_op;                // ALU (core0) opcode
-reg [2:0] gfx_rgb;               // VGA color channels
-reg [1:0] ram_bank_sel;          // Which ram bank to access
+reg        debounce;             // Input debouncer
+reg        db_trap;              // Debounce buffer
+reg [3:0]  seg_buf_numbers [0:3];// 7-segment binary-number-representation buffer
+reg [1:0]  stage;                // Computational stage
+reg [7:0]  alu_a;                // ALU (core0) input a
+reg [7:0]  alu_b;                // ALU (core0) input b
+reg [7:0]  alu_op;               // ALU (core0) opcode
+reg [2:0]  gfx_rgb;              // VGA color channels
+reg [1:0]  ram_bank_sel;         // Which ram bank to access
+reg [11:0] ram_addr;             // RAM address selection
+reg        ram_close;            // RAM close-row trigger
 
 // ----     WIRES      ---- //
 wire [7:0]  seg_buf[0:3];        // Encoded segment buffer (8-bit expanded 4-bit number buffer)
@@ -48,8 +50,8 @@ wire        cb;                  // Callback/timeout
 wire [9:0]  vga_coords[0:1];     // Current screen coordinates being drawn to
 wire        ram_request_read;    // Trigger a read operation from main memory
 wire        ram_request_write;   // Trigger a write operation from main memory
-wire [3:0]  ram_event;           // Event trigger from ram when an operation is completed (ex. a read op is ready)
-wire [15:0] ram_state;           // Main memory event information (0:3; bank0, 4:7; bank1, 8:11; bank2, 12:15; bank3)
+wire        ram_event;           // Event trigger from ram when a r/w operation is ready
+wire [1:0]  ram_event_bank;      // Which bank an event is happening on
 
 // ----  WIRE ASSIGNS  ---- //
 assign pll[4] = clk;
@@ -104,8 +106,10 @@ RAM main_memory(
 	ram_request_read,
 	ram_request_write,
 	ram_bank_sel,
-	ram_state,
-	ram_event
+	ram_event,
+	ram_addr,
+	ram_close,
+	ram_event_bank
 );
 
 always @(posedge cb or negedge value) select_out <= cb ? 4'b0000 : 4'b1111;

@@ -8,9 +8,9 @@ module Callback(
 parameter ISIZE;
 
 reg [ISIZE-1:0] counter;
-reg [2:0] ctr_trigger = 2'b10;
+reg [2:0] ctr_trigger = 2'b00;
 
-assign callback = !counter & ctr_trigger;
+assign callback = !counter && ctr_trigger ? 1'b1 : 1'b0;
 
 always @(posedge clk or posedge reset) begin
 	if(reset) begin

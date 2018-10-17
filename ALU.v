@@ -31,9 +31,9 @@ reg        shift_rotate;
 
 wire [BITS:0]      add_out;
 wire [BITS-1:0]    lshift [0:LOG2_BITS];
-wire [LOG2_BITS:0] lshift_overflow;
+wire [LOG2_BITS-1:0] lshift_overflow;
 wire [BITS-1:0]    rshift [0:LOG2_BITS];
-wire [LOG2_BITS:0] rshift_underflow;
+wire [LOG2_BITS-1:0] rshift_underflow;
 
 assign z = i_z[7:0];
 assign o_flags = i_flg;
@@ -42,33 +42,13 @@ FastAdder8 fa8(.cin(), .a(a), .b(b), .out(add_out[BITS-1:0]), .cout(add_out[BITS
 
 genvar i;
 generate
-   for(i = 1; i<LOG2_BITS; i = i + 1) begin : shifters
-      LeftBitShifter #(.bits(BITS), .shiftby(2**(i-1))) lsh(i==1 ? a : lshift[i-1], b[i], shift_rotate, lshift[i], lshift_overflow[i]);
-		RightBitShifter #(.bits(BITS), .shiftby(2**(i-1))) rsh(i==1 ? a : rshift[i-1], b[i], shift_rotate, rshift[i], rshift_underflow[i]);
+   for(i = 0; i<LOG2_BITS; i = i + 1) begin : shifters
+      LeftBitShifter #(.bits(BITS), .shiftby(2**i)) lsh(i==0 ? a : lshift[i-1], b[i], shift_rotate, lshift[i], lshift_overflow[i]);
+		RightBitShifter #(.bits(BITS), .shiftby(2**i)) rsh(i==0 ? a : rshift[i-1], b[i], shift_rotate, rshift[i], rshift_underflow[i]);
    end
 endgenerate
 
-integer j;
-
-// Left shift decoder
-//LeftBitShifter #(.bits(BITS), .shiftby(1)) (a, b[0], shift_rotate, lshift[0], lshift_overflow[0]);
-//LeftBitShifter #(.bits(BITS), .shiftby(2)) (lshift[0], b[1], shift_rotate, lshift[1], lshift_overflow[1]);
-//LeftBitShifter #(.bits(BITS), .shiftby(4)) (lshift[1], b[2], shift_rotate, lshift[2], lshift_overflow[2]);
-//LeftBitShifter #(.bits(8), .shiftby(8)) (lshift[2], b[3], lshift[3], lshift_overflow[3]);
-//LeftBitShifter #(.bits(8), .shiftby(16)) (lshift[3], b[4], lshift[4], lshift_overflow[4]);
-//LeftBitShifter #(.bits(8), .shiftby(32)) (lshift[4], b[5], lshift[5], lshift_overflow[5]);
-//LeftBitShifter #(.bits(8), .shiftby(64)) (lshift[5], b[6], lshift[6], lshift_overflow[6]);
-//LeftBitShifter #(.bits(8), .shiftby(128)) (lshift[6], b[7], lshift[7], lshift_overflow[7]);
-
-// Right shift decoder
-//RightBitShifter #(.bits(BITS), .shiftby(1)) (a, b[0], shift_rotate, rshift[0], rshift_underflow[0]);
-//RightBitShifter #(.bits(BITS), .shiftby(2)) (rshift[0], b[1], shift_rotate, rshift[1], rshift_underflow[1]);
-//RightBitShifter #(.bits(BITS), .shiftby(4)) (rshift[1], b[2], shift_rotate, rshift[2], rshift_underflow[2]);
-//RightBitShifter #(.bits(8), .shiftby(8)) (rshift[2], b[3], rshift[3], rshift_underflow[3]);
-//RightBitShifter #(.bits(8), .shiftby(16)) (rshift[3], b[4], rshift[4], rshift_underflow[4]);
-//RightBitShifter #(.bits(8), .shiftby(32)) (rshift[4], b[5], rshift[5], rshift_underflow[5]);
-//RightBitShifter #(.bits(8), .shiftby(64)) (rshift[5], b[6], rshift[6], rshift_underflow[6]);
-//RightBitShifter #(.bits(8), .shiftby(128)) (rshift[6], b[7], rshift[7], rshift_underflow[7]);
+integer j, k;
 
 always @* begin
    case(op & 8'b00011111) // 5-bit instructions: 3 flag bits
@@ -163,7 +143,7 @@ always @* begin
          i_z <= ~(a ^ b);
          i_flg <= 8'b0;
       end
-      
+		
       // CL_MUL
 		/*
       12: begin
