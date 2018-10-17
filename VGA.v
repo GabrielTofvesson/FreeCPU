@@ -1,12 +1,12 @@
 module VGA(
-	input  wire       clk,
-	input wire [2:0]  rgb_data,
-	output reg        graphics_clk,
-	output wire [9:0] graphics_coords_x,
-	output wire [9:0] graphics_coords_y,
-	output wire [2:0] VGA_rgb,
-	output wire       VGA_hsync,
-	output wire       VGA_vsync
+   input  wire       clk,
+   input wire [2:0]  rgb_data,
+   output reg        graphics_clk,
+   output wire [9:0] graphics_coords_x,
+   output wire [9:0] graphics_coords_y,
+   output wire [2:0] VGA_rgb,
+   output wire       VGA_hsync,
+   output wire       VGA_vsync
 );
 
 parameter

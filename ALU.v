@@ -44,7 +44,7 @@ genvar i;
 generate
    for(i = 0; i<LOG2_BITS; i = i + 1) begin : shifters
       LeftBitShifter #(.bits(BITS), .shiftby(2**i)) lsh(i==0 ? a : lshift[i-1], b[i], shift_rotate, lshift[i], lshift_overflow[i]);
-		RightBitShifter #(.bits(BITS), .shiftby(2**i)) rsh(i==0 ? a : rshift[i-1], b[i], shift_rotate, rshift[i], rshift_underflow[i]);
+      RightBitShifter #(.bits(BITS), .shiftby(2**i)) rsh(i==0 ? a : rshift[i-1], b[i], shift_rotate, rshift[i], rshift_underflow[i]);
    end
 endgenerate
 
@@ -143,9 +143,9 @@ always @* begin
          i_z <= ~(a ^ b);
          i_flg <= 8'b0;
       end
-		
+      
       // CL_MUL
-		/*
+      /*
       12: begin
          i_z <=
             (a[7] ? b << 7 : 16'b0) ^
@@ -156,7 +156,7 @@ always @* begin
             (a[2] ? b << 2 : 16'b0) ^
             (a[1] ? b << 1 : 16'b0) ^
             (a[0] ? b      : 16'b0);
-			
+         
          i_flg <=
             (a[7] && (b[1] || b[2] || b[3] || b[4] || b[5] || b[6] || b[7])) ||
             (a[6] && (b[2] || b[3] || b[4] || b[5] || b[6] || b[7])) ||
@@ -168,7 +168,7 @@ always @* begin
             ? 8'b1 : 8'b0;
       end
       */
-		
+      
       // SHR (flag: rotate)
       13: begin
          shift_rotate <= op[5];
@@ -225,8 +225,8 @@ endmodule
 
 module Combine(
     input wire  i1,
-	 input wire  i2,
-	 output wire o
+    input wire  i2,
+    output wire o
 );
 
 assign o = i1 | i2;
