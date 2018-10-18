@@ -24,7 +24,7 @@ module SevenSegment(
 );
 
 // ----    SETTINGS    ---- //
-localparam PLL_SELECT = 1;       // 0: 100MHz, 1: 200MHz, 2: 300MHz, 3: 400MHz, 4: 50MHz
+localparam PLL_SELECT = 3;       // 0: 100MHz, 1: 200MHz, 2: 300MHz, 3: 400MHz, 4: 50MHz
 localparam RAM_PLL = 0;          // Must be either 0 or 1. DO NOT SET TO ANY OTHER VALUE AS IT MIGHT FRY THE ONBOARD RAM!!!
 
 // ----    REGISTERS   ---- //
@@ -39,6 +39,10 @@ reg [2:0]  gfx_rgb;              // VGA color channels
 reg [1:0]  ram_bank_sel;         // Which ram bank to access
 reg [11:0] ram_addr;             // RAM address selection
 reg        ram_close;            // RAM close-row trigger
+reg [7:0]  cache0_addr;          // Cache0 access address
+reg [15:0] cache0_data = 16'b0;  // Data to write to cache0
+reg        cache0_write;         // Write-enable for cache0
+
 
 // ----     WIRES      ---- //
 wire [7:0]  seg_buf[0:3];        // Encoded segment buffer (8-bit expanded 4-bit number buffer)
@@ -47,11 +51,16 @@ wire [7:0]  alu_flags;           // ALU (core0) output flags
 wire [4:0]  pll;                 // Phase-locked-loop connections (+ source clock)
 wire        vga_clk;             // VGA data clock
 wire        cb;                  // Callback/timeout
-wire [9:0]  vga_coords[0:1];     // Current screen coordinates being drawn to
+wire [11:0] vga_coords[0:1];     // Current screen coordinates being drawn to
 wire        ram_request_read;    // Trigger a read operation from main memory
 wire        ram_request_write;   // Trigger a write operation from main memory
 wire        ram_event;           // Event trigger from ram when a r/w operation is ready
 wire [1:0]  ram_event_bank;      // Which bank an event is happening on
+wire [15:0] cache0_dq;           // Data out from cache0
+wire i_latch = ~latch;           // Latch input wire
+wire i_value = ~value;           // Value input wire
+wire i_next = ~next;             // Next input wire
+wire i_write = ~write;           // Write input wire
 
 // ----  WIRE ASSIGNS  ---- //
 assign pll[4] = clk;
@@ -78,8 +87,11 @@ SegmentManager seg_display(
    .segments (seg_write)
 );
 
+// 4096-bit internal cache memory
+//cache c0(cache0_addr, pll[PLL_SELECT], cache0_data, cache0_write, cache0_dq);
+
 // Graphics controller
-VGA screen(clk, gfx_rgb, vga_clk, vga_coords[0], vga_coords[1], VGA_rgb, VGA_hsync, VGA_vsync);
+VGA screen(pll[0], gfx_rgb, vga_clk, vga_coords[0], vga_coords[1], VGA_rgb, VGA_hsync, VGA_vsync);
 
 // Arithmetic logic unit
 ALU #(.BITS(8), .LOG2_BITS(3)) core0(.a(alu_a), .b(alu_b), .op(alu_op), .z(alu_out), .o_flags(alu_flags));
@@ -112,6 +124,43 @@ RAM main_memory(
    ram_event_bank
 );
 
+// 1280x800 screen
+always @(posedge pll[3]) begin
+	gfx_rgb <= vga_coords[0] == 0 || vga_coords[0] == 1278 || vga_coords[1] == 0 || vga_coords[1] == 799 ? 3'b111 : 3'b0; // Draw border along edge of screen
+end
+
+always @(posedge i_latch or posedge i_write or posedge i_value or posedge i_next or posedge pll[PLL_SELECT]) begin
+	if(i_latch) debounce <= 1'b1;
+	else if(i_write) begin
+		debounce <= 1'b0;
+		if(debounce) begin
+			if(cache0_write) cache0_data <= cache0_data + 1'b1;
+			else cache0_write <= 1'b1;
+		end
+	end
+	else if(i_value) begin
+		debounce <= 1'b0;
+		if(debounce) begin
+			if(!cache0_write) cache0_addr <= cache0_addr + 1'b1;
+			else cache0_write <= 1'b0;
+		end
+	end
+	else if(i_next) begin
+		debounce <= 1'b0;
+		if(debounce) begin
+			if(!cache0_write) cache0_addr <= cache0_addr - 1'b1;
+			else cache0_write <= 1'b0;
+		end
+	end
+	else if(pll[PLL_SELECT]) begin
+		seg_buf_numbers[3] <= cache0_dq[3:0];
+		seg_buf_numbers[2] <= cache0_dq[7:4];
+		seg_buf_numbers[1] <= cache0_dq[11:8];
+		seg_buf_numbers[0] <= cache0_dq[15:12];
+		select_out <= {debounce ? 1'b0 : 1'b1, cache0_write ? 1'b0 : 1'b1, 2'b11};
+	end
+end
+/*
 always @(posedge cb or negedge value) select_out <= cb ? 4'b0000 : 4'b1111;
 always @(posedge vga_clk) gfx_rgb <= alu_a[2:0];
 always @(posedge pll[PLL_SELECT]) begin
@@ -182,4 +231,5 @@ always @(posedge pll[PLL_SELECT]) begin
    //select_out[2] <= next;
    //select_out[3] <= latch;
 end
+*/
 endmodule

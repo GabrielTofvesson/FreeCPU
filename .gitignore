@@ -25,3 +25,4 @@ incremental_db/*
 *.qsf
 *.qpf
 .sopc_builder/*
+.qsys_edit/*

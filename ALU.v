@@ -94,7 +94,7 @@ always @* begin
          101 -> a >= b
          110 -> a <= b
          111 -> No output
-         
+			
          */
          i_z <= (op[7:5] == 3'b000) || (op[7:5] == 3'b011) || (op[7:5] == 3'b111) ? 16'b0 : (op[5] && a > b) || (op[6] && a < b ) || (op[7] && a == b) ? 16'b1 : 16'b0;
          i_flg <=
@@ -168,7 +168,15 @@ always @* begin
             ? 8'b1 : 8'b0;
       end
       */
-      
+
+      // ZZ_ED (flag: decode)
+      12: begin
+         i_z <= op[7] ?
+            {a[0], a[BITS-1:1] ^ (a[0] ? {(BITS-1){1'b1}} : 1'b0)} :          // Decode
+            {a[BITS-2:0] ^ (a[BITS-1] ? {(BITS-1){1'b1}} : 1'b0), a[BITS-1]}; // Encode
+         i_flg <= 8'b0;
+      end
+
       // SHR (flag: rotate)
       13: begin
          shift_rotate <= op[5];
